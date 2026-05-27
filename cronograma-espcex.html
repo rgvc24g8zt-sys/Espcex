@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cronograma EsPCEx</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background: #0a0f1a;
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #e2e8f0;
+    padding-bottom: 60px;
+  }
+  .header {
+    background: linear-gradient(135deg, #0f1f3d 0%, #1a1a2e 50%, #0f1f3d 100%);
+    border-bottom: 2px solid #1e3a5f;
+    padding: 32px 24px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header-grid {
+    position: absolute; top:0; left:0; right:0; bottom:0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(59,130,246,0.07) 39px, rgba(59,130,246,0.07) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(59,130,246,0.07) 39px, rgba(59,130,246,0.07) 40px);
+    pointer-events: none;
+  }
+  .header-subtitle { font-size:13px; letter-spacing:4px; color:#3b82f6; text-transform:uppercase; margin-bottom:8px; font-family:monospace; position:relative; }
+  .header h1 { font-size:28px; font-weight:bold; margin:0 0 6px; letter-spacing:2px; color:#f8fafc; position:relative; }
+  .header-dates { font-size:13px; color:#94a3b8; letter-spacing:2px; margin-bottom:20px; position:relative; }
+  .progress-wrap { max-width:400px; margin:0 auto; position:relative; }
+  .progress-labels { display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:6px; font-family:monospace; }
+  .progress-bar-bg { background:#1e293b; border-radius:4px; height:8px; overflow:hidden; }
+  .progress-bar-fill { height:100%; background:linear-gradient(90deg,#3b82f6,#22c55e); border-radius:4px; transition:width 0.4s ease; }
+
+  .container { max-width:680px; margin:0 auto; padding:0 16px; }
+
+  .phase-tabs { display:flex; gap:8px; margin-top:24px; margin-bottom:8px; }
+  .phase-btn {
+    flex:1; padding:10px 6px; border-radius:8px; border:2px solid #1e293b;
+    background:#111827; color:#64748b; cursor:pointer; font-size:11px;
+    font-weight:bold; letter-spacing:1px; text-align:center; transition:all 0.2s;
+    font-family:monospace;
+  }
+  .phase-btn .phase-icon { font-size:16px; margin-bottom:3px; }
+  .phase-btn .phase-sub { font-size:9px; margin-top:2px; opacity:0.7; }
+
+  .phase-desc {
+    background:#111827; border-radius:8px; padding:10px 14px;
+    font-size:12px; color:#94a3b8; margin-bottom:16px; font-style:italic;
+    border-left:3px solid #3b82f6; border:1px solid rgba(59,130,246,0.2);
+    border-left:3px solid #3b82f6;
+  }
+
+  .week-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  .week-btn {
+    padding:6px 12px; border-radius:20px; border:1px solid #1e293b;
+    background:transparent; color:#475569; cursor:pointer; font-size:11px;
+    font-family:monospace; letter-spacing:0.5px; transition:all 0.2s;
+  }
+
+  .week-header {
+    border-radius:10px; padding:12px 16px; margin-bottom:12px;
+    display:flex; justify-content:space-between; align-items:center;
+    border:1px solid rgba(255,255,255,0.1);
+  }
+  .week-header-label { font-size:11px; letter-spacing:2px; font-family:monospace; }
+  .week-header-title { font-size:16px; font-weight:bold; color:#f8fafc; }
+  .week-badge {
+    border-radius:6px; padding:4px 10px; font-size:11px; font-family:monospace;
+  }
+
+  .days-list { display:flex; flex-direction:column; gap:8px; }
+  .day-card {
+    border-radius:10px; padding:12px 14px; cursor:pointer;
+    transition:all 0.2s; display:flex; gap:12px; align-items:flex-start;
+    border:1px solid #1e293b;
+  }
+  .day-card.done { opacity:0.65; }
+  .checkbox {
+    width:20px; height:20px; border-radius:4px; border:2px solid #334155;
+    background:transparent; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; margin-top:1px; font-size:12px; color:#fff; transition:all 0.2s;
+  }
+  .day-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .day-name { font-size:11px; color:#94a3b8; font-family:monospace; letter-spacing:1px; }
+  .day-subj-badge { border-radius:4px; padding:2px 8px; font-size:10px; font-family:monospace; letter-spacing:0.5px; }
+  .day-content { font-size:13px; color:#cbd5e1; line-height:1.4; }
+  .day-time { font-size:10px; color:#475569; margin-top:6px; font-family:monospace; }
+
+  .legend {
+    margin-top:28px; background:#111827; border-radius:10px;
+    padding:14px 16px; border:1px solid #1e293b;
+  }
+  .legend-title { font-size:10px; letter-spacing:2px; color:#475569; font-family:monospace; margin-bottom:10px; }
+  .legend-items { display:flex; flex-wrap:wrap; gap:8px; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:#94a3b8; }
+  .legend-dot { width:8px; height:8px; border-radius:2px; }
+
+  .tips {
+    margin-top:16px; background:#0f1f3d; border-radius:10px;
+    padding:14px 16px; border:1px solid #1e3a5f;
+  }
+  .tips-title { font-size:10px; letter-spacing:2px; color:#3b82f6; font-family:monospace; margin-bottom:8px; }
+  .tip { font-size:12px; color:#64748b; margin-bottom:5px; padding-left:12px; border-left:2px solid #1e3a5f; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-grid"></div>
+  <div class="header-subtitle">★ ESCOLA PREPARATÓRIA DE CADETES DO EXÉRCITO ★</div>
+  <h1>CRONOGRAMA EsPCEx</h1>
+  <div class="header-dates">1H POR DIA · 24 SEMANAS · PROVA SETEMBRO 2026</div>
+  <div class="progress-wrap">
+    <div class="progress-labels">
+      <span>PROGRESSO GERAL</span>
+      <span id="progress-text">0/168 dias (0%)</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="phase-tabs" id="phase-tabs"></div>
+  <div class="phase-desc" id="phase-desc"></div>
+  <div class="week-tabs" id="week-tabs"></div>
+  <div class="week-header" id="week-header">
+    <div>
+      <div class="week-header-label" id="week-label"></div>
+      <div class="week-header-title" id="week-title"></div>
+    </div>
+    <div class="week-badge" id="week-badge">7 dias</div>
+  </div>
+  <div class="days-list" id="days-list"></div>
+  <div class="legend">
+    <div class="legend-title">LEGENDA DE MATÉRIAS</div>
+    <div class="legend-items" id="legend-items"></div>
+  </div>
+  <div class="tips">
+    <div class="tips-title">💡 DICAS DO CRONOGRAMA</div>
+    <div class="tip">Marque o dia como feito clicando nele — o progresso salva no seu celular/PC.</div>
+    <div class="tip">Nos simulados: use provas antigas da EsPCEx (disponíveis no site oficial).</div>
+    <div class="tip">Português e Matemática têm maior peso — nunca pule esses dias.</div>
+    <div class="tip">Redação: escreva 1 texto por semana a partir do mês 2 e sempre revise.</div>
+    <div class="tip">A semana é flexível — se não fizer num dia, recupere no fim de semana.</div>
+  </div>
+</div>
+
+<script>
+const COLORS = {
+  mat:  { bg:"#1a3a5c", accent:"#3b82f6" },
+  port: { bg:"#1a3a2a", accent:"#22c55e" },
+  fis:  { bg:"#3a1a1a", accent:"#ef4444" },
+  qui:  { bg:"#3a2a1a", accent:"#f97316" },
+  hist: { bg:"#2a1a3a", accent:"#a855f7" },
+  geo:  { bg:"#1a2a3a", accent:"#06b6d4" },
+  ing:  { bg:"#2a3a1a", accent:"#84cc16" },
+  red:  { bg:"#3a1a2a", accent:"#ec4899" },
+  rev:  { bg:"#2a2a2a", accent:"#94a3b8" },
+};
+const ICON  = { mat:"📐",port:"📝",fis:"⚡",qui:"🧪",hist:"🏛️",geo:"🌍",ing:"🇺🇸",red:"✍️",rev:"🔄" };
+const LABEL = { mat:"Matemática",port:"Português",fis:"Física",qui:"Química",hist:"História",geo:"Geografia",ing:"Inglês",red:"Redação",rev:"Revisão" };
+
+const PHASES = [
+  {
+    phase:"Fase 1 — Base", months:"Meses 1–4", color:"#1a3a5c", accent:"#3b82f6",
+    desc:"Construir fundação sólida nos conteúdos iniciais de cada matéria.",
+    icon:"🏗️",
+    weeks:[
+      { week:"Semana 1–2", topic:"Fundamentos", days:[
+        {day:"Segunda",subj:"mat",content:"Conjuntos: operações, diagramas, intervalos reais"},
+        {day:"Terça",subj:"port",content:"Interpretação de texto: estratégias de leitura rápida"},
+        {day:"Quarta",subj:"fis",content:"Cinemática: MRU e MRUV — equações e gráficos"},
+        {day:"Quinta",subj:"mat",content:"Funções: conceito, domínio, imagem, gráficos"},
+        {day:"Sexta",subj:"qui",content:"Ligações químicas: iônica, covalente, metálica"},
+        {day:"Sábado",subj:"hist",content:"Sociedade Feudal: estrutura, Igreja, Cruzadas"},
+        {day:"Domingo",subj:"ing",content:"Simple Present e Present Continuous — usos e exercícios"},
+      ]},
+      { week:"Semana 3–4", topic:"Aprofundamento inicial", days:[
+        {day:"Segunda",subj:"mat",content:"Função de 1º grau: aplicações e problemas"},
+        {day:"Terça",subj:"port",content:"Morfologia: classes de palavras — substantivo, adjetivo, verbo"},
+        {day:"Quarta",subj:"fis",content:"Dinâmica: Leis de Newton + força peso e normal"},
+        {day:"Quinta",subj:"mat",content:"Função de 2º grau: vértice, raízes, discriminante"},
+        {day:"Sexta",subj:"qui",content:"Funções inorgânicas: ácidos e bases (Arrhenius)"},
+        {day:"Sábado",subj:"geo",content:"Cartografia: escalas, projeções, fusos horários"},
+        {day:"Domingo",subj:"rev",content:"Revisão da semana: 3 questões de cada matéria estudada"},
+      ]},
+      { week:"Semana 5–6", topic:"Consolidação", days:[
+        {day:"Segunda",subj:"mat",content:"Progressões Aritméticas (PA): fórmulas e soma"},
+        {day:"Terça",subj:"red",content:"Estrutura da dissertação: tese, argumentos, conclusão"},
+        {day:"Quarta",subj:"fis",content:"Trabalho, energia cinética e potencial — conservação"},
+        {day:"Quinta",subj:"mat",content:"Progressões Geométricas (PG): fórmulas e soma"},
+        {day:"Sexta",subj:"qui",content:"Funções inorgânicas: sais e óxidos + nomenclatura"},
+        {day:"Sábado",subj:"hist",content:"Renascimento, Reforma Protestante e Absolutismo"},
+        {day:"Domingo",subj:"ing",content:"Simple Past e Past Continuous — leitura e gramática"},
+      ]},
+      { week:"Semana 7–8", topic:"Simulado parcial", days:[
+        {day:"Segunda",subj:"mat",content:"Trigonometria: seno, cosseno, tangente — triângulo retângulo"},
+        {day:"Terça",subj:"port",content:"Sintaxe: sujeito, predicado, complementos verbais"},
+        {day:"Quarta",subj:"fis",content:"Termologia: temperatura, calor, dilatação térmica"},
+        {day:"Quinta",subj:"mat",content:"Trigonometria: círculo trigonométrico e arcos"},
+        {day:"Sexta",subj:"qui",content:"Reações químicas: tipos — síntese, análise, deslocamento"},
+        {day:"Sábado",subj:"geo",content:"Estrutura da Terra: placas tectônicas, vulcões, terremotos"},
+        {day:"Domingo",subj:"rev",content:"SIMULADO — 10 questões mistas (pegar prova antiga EsPCEx)"},
+      ]},
+    ]
+  },
+  {
+    phase:"Fase 2 — Intermediário", months:"Meses 5–8", color:"#1a3a2a", accent:"#22c55e",
+    desc:"Aprofundar conteúdos, intensificar resolução de questões.",
+    icon:"⚙️",
+    weeks:[
+      { week:"Semana 9–10", topic:"Expansão", days:[
+        {day:"Segunda",subj:"mat",content:"Matrizes: operações, determinante 2x2 e 3x3"},
+        {day:"Terça",subj:"port",content:"Concordância verbal e nominal — regras e exceções"},
+        {day:"Quarta",subj:"fis",content:"Óptica: reflexão, refração, espelhos e lentes"},
+        {day:"Quinta",subj:"mat",content:"Sistemas lineares: método de Cramer e escalonamento"},
+        {day:"Sexta",subj:"qui",content:"Estequiometria: cálculo de massa e mol — reagente limitante"},
+        {day:"Sábado",subj:"hist",content:"Revoluções Inglesas e Revolução Industrial (séc. XVII–XIX)"},
+        {day:"Domingo",subj:"ing",content:"Present Perfect e Past Perfect — forma e uso"},
+      ]},
+      { week:"Semana 11–12", topic:"Questões temáticas", days:[
+        {day:"Segunda",subj:"mat",content:"Geometria plana: áreas e perímetros — triângulo, quadriláteros, círculo"},
+        {day:"Terça",subj:"red",content:"Prática de redação: escrever 1 texto completo e revisar"},
+        {day:"Quarta",subj:"fis",content:"Eletrostática: cargas, campo e potencial elétrico"},
+        {day:"Quinta",subj:"mat",content:"Geometria espacial: prismas, pirâmides, cilindro, cone, esfera"},
+        {day:"Sexta",subj:"qui",content:"Gases: lei dos gases ideais — Boyle, Charles, Gay-Lussac"},
+        {day:"Sábado",subj:"geo",content:"Climas e vegetação do mundo: classificação e características"},
+        {day:"Domingo",subj:"rev",content:"Revisão + 5 questões de matemática e 5 de física"},
+      ]},
+      { week:"Semana 13–14", topic:"Química Orgânica + História Moderna", days:[
+        {day:"Segunda",subj:"mat",content:"Análise combinatória: arranjos, permutações, combinações"},
+        {day:"Terça",subj:"port",content:"Figuras de linguagem: metáfora, metonímia, hipérbole, ironia"},
+        {day:"Quarta",subj:"fis",content:"Eletrodinâmica: corrente, resistência, lei de Ohm, circuitos"},
+        {day:"Quinta",subj:"mat",content:"Probabilidade: espaço amostral, eventos, probabilidade condicional"},
+        {day:"Sexta",subj:"qui",content:"Química Orgânica: cadeias carbônicas e funções orgânicas"},
+        {day:"Sábado",subj:"hist",content:"Independência dos EUA e Revolução Francesa"},
+        {day:"Domingo",subj:"ing",content:"Modal verbs (can, must, should, would) — gramática e leitura"},
+      ]},
+      { week:"Semana 15–16", topic:"Simulado intermediário", days:[
+        {day:"Segunda",subj:"mat",content:"Estatística: média, mediana, moda, desvio padrão"},
+        {day:"Terça",subj:"port",content:"Coesão e coerência textual — conectivos e progressão"},
+        {day:"Quarta",subj:"fis",content:"Ondas: propriedades, som, efeito Doppler"},
+        {day:"Quinta",subj:"mat",content:"Logaritmos e exponenciais: propriedades e equações"},
+        {day:"Sexta",subj:"qui",content:"Termoquímica: entalpia, lei de Hess, energia de ligação"},
+        {day:"Sábado",subj:"geo",content:"Geopolítica: blocos econômicos, globalização, conflitos"},
+        {day:"Domingo",subj:"rev",content:"SIMULADO COMPLETO — prova antiga EsPCEx (2 dias separados)"},
+      ]},
+    ]
+  },
+  {
+    phase:"Fase 3 — Avançado", months:"Meses 9–12", color:"#3a1a1a", accent:"#ef4444",
+    desc:"Revisão intensa, simulados cronometrados, zerar pontos fracos.",
+    icon:"🎯",
+    weeks:[
+      { week:"Semana 17–18", topic:"Revisão temática — Exatas", days:[
+        {day:"Segunda",subj:"mat",content:"Revisão geral de Geometria: plana + espacial + analítica"},
+        {day:"Terça",subj:"port",content:"Questões de provas antigas — Português EsPCEx"},
+        {day:"Quarta",subj:"fis",content:"Revisão: Mecânica completa — cinemática + dinâmica + energia"},
+        {day:"Quinta",subj:"mat",content:"Revisão: Funções + Trigonometria — questões de prova"},
+        {day:"Sexta",subj:"qui",content:"Revisão: Química Orgânica — reações e polímeros"},
+        {day:"Sábado",subj:"hist",content:"Brasil Colônia → Império → República Velha"},
+        {day:"Domingo",subj:"ing",content:"Estratégia de prova: leitura rápida, vocabulário por contexto"},
+      ]},
+      { week:"Semana 19–20", topic:"Revisão temática — Humanas", days:[
+        {day:"Segunda",subj:"mat",content:"Questões difíceis: PA/PG + Probabilidade + Estatística"},
+        {day:"Terça",subj:"red",content:"2 redações cronometradas: 45 min cada — corrigir com critérios EsPCEx"},
+        {day:"Quarta",subj:"fis",content:"Revisão: Eletricidade + Ondas + Óptica"},
+        {day:"Quinta",subj:"mat",content:"Revisão: Matrizes, Determinantes e Sistemas"},
+        {day:"Sexta",subj:"qui",content:"Revisão: Estequiometria + Soluções + Equilíbrio Químico"},
+        {day:"Sábado",subj:"geo",content:"Brasil: relevo, climas, biomas, hidrografia — revisão completa"},
+        {day:"Domingo",subj:"rev",content:"SIMULADO — 44 questões Dia 1 cronometrado (4h30)"},
+      ]},
+      { week:"Semana 21–22", topic:"Pontos fracos", days:[
+        {day:"Segunda",subj:"mat",content:"Reforço no conteúdo com menor desempenho nos simulados"},
+        {day:"Terça",subj:"port",content:"Reforço: Morfologia ou Sintaxe (o que errou mais)"},
+        {day:"Quarta",subj:"fis",content:"Reforço no conteúdo com menor desempenho"},
+        {day:"Quinta",subj:"mat",content:"20 questões variadas — cronometrar 1 min por questão"},
+        {day:"Sexta",subj:"qui",content:"Reforço: Cinética Química e Equilíbrio Iônico"},
+        {day:"Sábado",subj:"hist",content:"Guerras Mundiais, Nazifascismo, Guerra Fria — revisão"},
+        {day:"Domingo",subj:"rev",content:"SIMULADO — 56 questões Dia 2 cronometrado (4h30)"},
+      ]},
+      { week:"Semana 23–24", topic:"Reta final", days:[
+        {day:"Segunda",subj:"mat",content:"Revisão final: tópicos mais cobrados — estatísticas das últimas provas"},
+        {day:"Terça",subj:"port",content:"Revisão final + 1 redação completa"},
+        {day:"Quarta",subj:"fis",content:"Revisão final: fórmulas, unidades, macetes"},
+        {day:"Quinta",subj:"mat",content:"Questões comentadas das últimas 3 edições EsPCEx"},
+        {day:"Sexta",subj:"qui",content:"Revisão final: tabela periódica, reações e orgânica"},
+        {day:"Sábado",subj:"geo",content:"Revisão final: Geografia do Brasil — demografia e urbanização"},
+        {day:"Domingo",subj:"rev",content:"SIMULADO FINAL — prova completa dos 2 dias + análise de erros"},
+      ]},
+    ]
+  }
+];
+
+const TOTAL_DAYS = PHASES.reduce((a,p)=>a+p.weeks.reduce((b,w)=>b+w.days.length,0),0);
+
+// State
+let activePhase = 0;
+let activeWeek = 0;
+let checked = JSON.parse(localStorage.getItem('espcex_checked')||'{}');
+
+function saveChecked() {
+  localStorage.setItem('espcex_checked', JSON.stringify(checked));
+}
+
+function updateProgress() {
+  const done = Object.values(checked).filter(Boolean).length;
+  const pct = Math.round((done/TOTAL_DAYS)*100);
+  document.getElementById('progress-text').textContent = done+'/'+TOTAL_DAYS+' dias ('+pct+'%)';
+  document.getElementById('progress-fill').style.width = pct+'%';
+}
+
+function renderPhaseTabs() {
+  const container = document.getElementById('phase-tabs');
+  container.innerHTML = '';
+  PHASES.forEach((p,i) => {
+    const btn = document.createElement('button');
+    btn.className = 'phase-btn';
+    btn.innerHTML = '<div class="phase-icon">'+p.icon+'</div>'+p.phase.split('—')[1].trim()+'<div class="phase-sub">'+p.months+'</div>';
+    if(i===activePhase){
+      btn.style.border = '2px solid '+p.accent;
+      btn.style.background = p.color;
+      btn.style.color = '#f8fafc';
+    }
+    btn.onclick = ()=>{ activePhase=i; activeWeek=0; render(); };
+    container.appendChild(btn);
+  });
+}
+
+function renderPhaseDesc() {
+  const p = PHASES[activePhase];
+  const el = document.getElementById('phase-desc');
+  el.textContent = p.desc;
+  el.style.borderLeft = '3px solid '+p.accent;
+  el.style.borderColor = p.accent+'33';
+  el.style.borderLeftColor = p.accent;
+}
+
+function renderWeekTabs() {
+  const p = PHASES[activePhase];
+  const container = document.getElementById('week-tabs');
+  container.innerHTML = '';
+  p.weeks.forEach((w,i) => {
+    const btn = document.createElement('button');
+    btn.className = 'week-btn';
+    btn.textContent = w.week;
+    if(i===activeWeek){
+      btn.style.border = '1px solid '+p.accent;
+      btn.style.background = p.accent+'22';
+      btn.style.color = p.accent;
+    }
+    btn.onclick = ()=>{ activeWeek=i; render(); };
+    container.appendChild(btn);
+  });
+}
+
+function renderWeekHeader() {
+  const p = PHASES[activePhase];
+  const w = p.weeks[activeWeek];
+  const header = document.getElementById('week-header');
+  header.style.background = 'linear-gradient(135deg,'+p.color+',#111827)';
+  header.style.borderColor = p.accent+'44';
+  document.getElementById('week-label').textContent = w.week.toUpperCase();
+  document.getElementById('week-label').style.color = p.accent;
+  document.getElementById('week-title').textContent = w.topic;
+  const badge = document.getElementById('week-badge');
+  badge.style.background = p.accent+'22';
+  badge.style.border = '1px solid '+p.accent;
+  badge.style.color = p.accent;
+}
+
+function renderDays() {
+  const p = PHASES[activePhase];
+  const w = p.weeks[activeWeek];
+  const container = document.getElementById('days-list');
+  container.innerHTML = '';
+  w.days.forEach((d,i) => {
+    const c = COLORS[d.subj];
+    const key = activePhase+'-'+activeWeek+'-'+i;
+    const done = !!checked[key];
+    const card = document.createElement('div');
+    card.className = 'day-card'+(done?' done':'');
+    card.style.background = done ? c.bg+'cc' : '#111827';
+    card.style.border = '1px solid '+(done ? c.accent : '#1e293b');
+    card.style.borderLeft = '4px solid '+c.accent;
+    card.innerHTML = `
+      <div class="checkbox" style="border-color:${done?c.accent:'#334155'};background:${done?c.accent:'transparent'};">${done?'✓':''}</div>
+      <div style="flex:1">
+        <div class="day-meta">
+          <span class="day-name">${d.day.toUpperCase()}</span>
+          <span class="day-subj-badge" style="background:${c.accent}22;color:${c.accent};">${ICON[d.subj]} ${(LABEL[d.subj]||'').toUpperCase()}</span>
+        </div>
+        <div class="day-content" style="color:${done?'#64748b':'#cbd5e1'}">${d.content}</div>
+        <div class="day-time">⏱ 15min revisão · 35min conteúdo · 10min questões</div>
+      </div>
+    `;
+    card.onclick = ()=>{
+      checked[key] = !checked[key];
+      saveChecked();
+      render();
+    };
+    container.appendChild(card);
+  });
+}
+
+function renderLegend() {
+  const container = document.getElementById('legend-items');
+  container.innerHTML = '';
+  Object.entries(LABEL).forEach(([k,v]) => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = '<div class="legend-dot" style="background:'+COLORS[k].accent+'"></div>'+ICON[k]+' '+v;
+    container.appendChild(item);
+  });
+}
+
+function render() {
+  renderPhaseTabs();
+  renderPhaseDesc();
+  renderWeekTabs();
+  renderWeekHeader();
+  renderDays();
+  updateProgress();
+}
+
+renderLegend();
+render();
+</script>
+</body>
+</html>
